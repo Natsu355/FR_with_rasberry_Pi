@@ -3,12 +3,12 @@ import time
 import cv2
 from deepface import DeepFace
 from pinecone import Pinecone, ServerlessSpec
-from constants import *
+#from constants import *
 
-pc = Pinecone(api_key = tool_constants["PINECONE_API"])
-index_name = pc.Index("facerecognition")
+#pc = Pinecone(api_key = tool_constants["PINECONE_API"])
+#index_name = pc.Index("facerecognition")
 
-
+index_name = ""
 def query_db(embed):
     st = time.time()
     query_response = index_name.query(
@@ -21,11 +21,11 @@ def query_db(embed):
     print("****** IN quering *******", et-st)
     matched_name = query_response['matches'][0]['id']
     matched_score = query_response['matches'][0]['score']
-    if matched_score>=0.3:
+    if matched_score>=0.0:
         print("Results after quering the DB ------>> ", matched_name, matched_score, query_response['usage'])
         return matched_name
 
-cap = cv2.VideoCapture('samp.mp4')
+cap = cv2.VideoCapture('my.mp4')
 c=0
 while cap.isOpened():
     c=c+1
@@ -39,12 +39,13 @@ while cap.isOpened():
     if frame is None:
         print("Warning: Received an empty frame. Skipping...")
         continue
-    # if c%2==0:
-    #     continue
+    if c>50:
+        continue
     start_t = time.time()
+    frame=cv2.resize(frame,(320,460))
     results = DeepFace.represent(img_path=frame, enforce_detection=False,
                              model_name='Facenet512',
-                             detector_backend='mtcnn')
+                             detector_backend='ssd')
     end_t = time.time()
     print("********** Processing each frame *********** ", end_t-start_t)
     match_name='*'
@@ -57,16 +58,16 @@ while cap.isOpened():
         y2 = bbox['h'] + y1
         if x1==0 or y1==0:
             continue
-        # if c%10!=0:
-        #     match_name = query_db(res['embedding'])
+        #if c%10!=0:
+        #match_name = query_db(res['embedding'])
         frame = cv2.rectangle(frame,(x1,y1), (x2,y2), (255, 0, 0), 4)
         frame = cv2.putText(frame,match_name,(x1,y1), cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0),2)
-    cv2.imwrite("seq-"+str(c)+".jpg",frame)
-    # cv2.imshow("video capture", frame)
+    cv2.imwrite("tmp/seq-"+str(c)+".jpg",frame)
+    #cv2.imshow("video capture", frame)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    #if cv2.waitKey(1) & 0xFF == ord('q'):
+     #   break
 
 cap.release()
-cv2.destroyAllWindows()
+#cv2.destroyAllWindows()
 
