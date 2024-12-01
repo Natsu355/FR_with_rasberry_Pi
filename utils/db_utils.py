@@ -10,16 +10,19 @@ class VectorDB:
         self.initialize()
 
     def initialize(self):
+        """
+        Initializes the Pinecone Database instance using API key
+        """
         self.pc = Pinecone(api_key=tool_constants["PINECONE_API"])
-        self.index_name = self.pc.Index("facerecognition")
+        self.index_name = self.pc.Index(tool_constants["PINECONE_INDEX"])
 
 
     def upsert_data(self,inp_embeddings, id_name):
         """
-
-        :param inp_embeddings:
-        :param id_name:
-        :return:
+        Inserts facial features of a person along with the name into Pinecone database
+        :param inp_embeddings: facial features
+        :param id_name: name of person
+        :return: None
         """
         upsert_response = self.index_name.upsert(
             vectors=[
@@ -33,21 +36,23 @@ class VectorDB:
         print(upsert_response)
 
 
+
     def delete_data(self,del_id):
         """
-
-        :param del_id:
-        :return:
+        deletes the entry in Pinecone DB using name of the person
+        :param del_id: name of person stored in DB
+        :return: None
         """
         del_response = self.index_name.delete(ids=del_id, namespace=tool_constants['NAMESPACE'])
         print(del_response)
 
 
+
     def query_data(self,embedding):
         """
-
+        Searches the DB using facial features and returns the name,score if there is a match otherwise None 
         :param embedding:
-        :return:
+        :return: {name, score}
         """
         st = time.time()
         query_response = self.index_name.query(
@@ -60,7 +65,7 @@ class VectorDB:
         print("Time taken for Querying the DB -------> ",et-st)
         matched_name = query_response['matches'][0]['id']
         matched_score = query_response['matches'][0]['score']
-        if matched_score>=0.2:
+        if matched_score>=0.3:
             return {'name':matched_name,
                     'score':matched_score
                     }
@@ -68,20 +73,22 @@ class VectorDB:
             return None
 
 
+
     def fetch_data(self):
         """
-
-        :return:
+        Returns the name and facial features of a person queryed using the id
+        :return: None
         """
         all_ids = self.list_all_ids()
         fetch_response = self.index_name.fetch(ids=all_ids, namespace=tool_constants['NAMESPACE'])
         print(fetch_response)
 
 
+
     def list_all_ids(self):
         """
-
-        :return:
+        Returns all the Id's of entries stored in a Namespace in DB.
+        :return: Id's
         """
         all_ids=[]
         for ids in self.index_name.list(namespace=tool_constants['NAMESPACE']):
@@ -91,4 +98,4 @@ class VectorDB:
 
 #vecDb = VectorDB()
 #print(vecDb.list_all_ids())
-# vecDb.initialize()
+

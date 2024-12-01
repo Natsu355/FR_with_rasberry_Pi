@@ -1,0 +1,1 @@
+Directory to store resulting images and .mp4
